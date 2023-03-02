@@ -7,6 +7,7 @@ from fitz import Point
 from fitz import Rect
 from itertools import zip_longest
 import json
+from math import sqrt
 
 
 # https://stackoverflow.com/a/434411/104527
@@ -16,16 +17,38 @@ def grouper(iterable, n, fillvalue=None):
 
 
 class CardWriter:
-    def __init__(self, cards_path: str, output: str, side_size: int):
+    def __init__(self, cards_path: str, output: str, col_num: int, row_num: int,guides_enabled=True):
+        """Initialises the CardWriter class and saves important variables.
+
+        Args:
+            cards_path (str): Lists where to look for the imput images.
+            output (str): Lists the location to save the pdf.
+            col_num (int): How many colums there should be (And how big each row is)
+            row_num (int): How many rows there should be (How many rows are on each page.)
+            
+        self.output = output location
+        self.width, self.height = Width and Height of an A4 paper in pixels
+        self.col_num = col_num
+        self.row_num = row_num
+        self.horizontal_padding = Space in pixels reserved on the sides of the document.
+        self.vertical_padding = Space in pixels reserved on te top and bottom of the document.
+        self.card_width = Width of each card in pixels
+        self.card_height = Height of each card in pixels
+        self.card_count = How many times each card should be printed.
+        self.cards_path = Where the cards are located
+        
+        """
         self.output = output
         self.width, self.height = fitz.paper_size('A4')
-        self.side_size = side_size
+        self.col_num = col_num
+        self.row_num = row_num
         self.horizontal_padding = self.width * (1 / 17)
         self.vertical_padding = self.height * (1 / 44)
-        self.card_width = (self.width - (self.horizontal_padding * 2)) / side_size
-        self.card_height = (self.height - (self.vertical_padding * 2)) / side_size
+        self.card_width = (self.width - (self.horizontal_padding * 2)) / col_num
+        self.card_height = (self.height - (self.vertical_padding * 2)) / row_num
         self.card_count = self.__card_counts(cards_path)
         self.cards_path = cards_path
+        self.guides_enabled = guides_enabled
 
     def __card_counts(self,cards_path):
         content = [i for i in os.listdir(cards_path) if i.endswith(".json")]
@@ -46,6 +69,7 @@ class CardWriter:
         x1: float,
         y1: float,
     ):
+        """Black magic by James Power which i will not touch."""
         # This all could've been done more elegantly I am certain.
         logging.debug(f'points ({x0}, {y0})\t({x1}, {y1})')
         size = 20
@@ -74,8 +98,16 @@ class CardWriter:
         shape.commit()
 
     def __group_images(self, images: List[str]):
-        groupedRows = grouper(images, self.side_size)
-        groupedPages = grouper(groupedRows, self.side_size)
+        """Groups images into rows and colums using grouper function.
+
+        Args:
+            images (List[str]): Images all in one long list
+
+        Returns:
+            List: Matrix with grouped images
+        """
+        groupedRows = grouper(images, self.col_num)
+        groupedPages = grouper(groupedRows, self.row_num)
         return groupedPages
 
     def __images_from_path(self, images_path):
@@ -89,12 +121,14 @@ class CardWriter:
             path = os.path.join(images_path, file)
             if os.path.isfile(path) and any(extension in file for extension in extensions):
                 basename = os.path.basename(path).split(".")[0]
+                #Code block responsible for adding images multiple times
                 if self.card_count is not None:
                     if basename in self.card_count:
                         for _ in range(self.card_count[basename]):
                             images.append(path)
                     else:
                         images.append(path)
+                        
                 else:
                     images.append(path)
         return sorted(images)
@@ -105,8 +139,8 @@ class CardWriter:
             if row is not None:
                 for image_index, image in enumerate(row):
                     if image is not None:
-                        x0 = image_index * self.card_width + self.horizontal_padding
-                        x1 = x0 + self.card_width
+                        x0 = image_index * self.card_width + self.horizontal_padding 
+                        x1 = x0 + self.card_width 
                         y0 = row_index * self.card_height + self.vertical_padding
                         y1 = y0 + self.card_height
                         rect = Rect(x0, y0, x1, y1)
@@ -120,7 +154,8 @@ class CardWriter:
                         # instead of having the magic numbers in that function
                         # determine where to draw the guides from the edges of
                         # sheet. row_index & image_index should be enough here.
-                        self.__draw_guides(shape, x0, y0, x1, y1)
+                        if self.guides_enabled:
+                            self.__draw_guides(shape, x0, y0, x1, y1)
 
     def __align_back_cards(self, back_pages):
         cards = []
@@ -154,12 +189,13 @@ class CardWriter:
 
 
 def main():
+    """Main function. Finds all directories in input directory and creates a seperate PDF for each of them."""
     dirs = os.listdir("input")
     if not os.path.exists("output") and not os.path.isdir("output"):
         os.remove("output")
         os.mkdir("output")
     for dir in dirs:
-        CardWriter(cards_path=f"input/{dir}", output=f"output/{dir}.pdf", side_size=4).create_pdf()
+        CardWriter(cards_path=f"input/{dir}", output=f"output/{dir}.pdf", col_num=4,row_num=6).create_pdf()
 
 
 # i'm not sure how to tell vscode to run __main__.py lmao
