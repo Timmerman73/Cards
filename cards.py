@@ -120,7 +120,7 @@ class CardWriter:
         for file in files:
             path = os.path.join(images_path, file)
             if os.path.isfile(path) and any(extension in file for extension in extensions):
-                basename = os.path.basename(path).split(".")[0]
+                basename = os.path.basename(path)
                 #Code block responsible for adding images multiple times
                 if self.card_count is not None:
                     if basename in self.card_count:
@@ -195,7 +195,7 @@ def main():
         os.remove("output")
         os.mkdir("output")
     for dir in dirs:
-        CardWriter(cards_path=f"input/{dir}", output=f"output/{dir}.pdf", col_num=4,row_num=6).create_pdf()
+        CardWriter(cards_path=f"input/{dir}", output=f"output/{dir}.pdf", col_num=3,row_num=5).create_pdf()
 
 
 # i'm not sure how to tell vscode to run __main__.py lmao
