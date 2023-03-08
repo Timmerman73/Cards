@@ -1,6 +1,9 @@
 import os
 
 def main():
+    """Generates .json files for echt directory in input.
+    These files decide how many times each card gets printed
+    """
     for dir in os.listdir('input'):
         if os.path.isdir(f'input/{dir}'):
             json_str = "{\n"

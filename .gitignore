@@ -1,5 +1,3 @@
 dist
 *.pyc
-/input/
-/output/
 /.idea/
