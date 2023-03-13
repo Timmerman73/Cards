@@ -11,8 +11,12 @@ def main():
                 json_str = f'{json_str}"{filename}":\t1,\n'
             json_str = json_str.rstrip(",\n")
             json_str += "\n}"
-        with open(f"input/{dir}/{dir}.json","w") as file:
-            file.write(json_str)
+        overwrite = True
+        if os.path.exists(f"input/{dir}/{dir}.json"):
+            overwrite = input(f"input/{dir}/{dir}.json already exists do you want to overwrite it? Y/n ").upper() == "Y"
+        if overwrite:
+            with open(f"input/{dir}/{dir}.json","w") as file:
+                file.write(json_str)
             
                 
             
